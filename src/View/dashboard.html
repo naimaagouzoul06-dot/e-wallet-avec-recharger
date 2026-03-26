@@ -115,10 +115,12 @@
                 <i class="fas fa-paper-plane"></i>
                 <span>Transférer</span>
               </button>
-              <button class="action-btn" id="quickTopup" type="button">
+
+              <button class="action-btn" id="quickRecharge" type="button">
                 <i class="fas fa-plus-circle"></i>
                 <span>Recharger</span>
               </button>
+
               <button class="action-btn" id="quickRequest" type="button">
                 <i class="fas fa-hand-holding-usd"></i>
                 <span>Demander</span>
@@ -169,7 +171,7 @@
     </div>
   </main>
 
-  <!-- Popup transfert -->
+  <!-- partie transfert -->
   <div class="popup-overlay" id="transferPopup">
     <div class="popup-content">
       <div class="popup-header">
@@ -214,7 +216,6 @@
               <input type="checkbox" id="saveBeneficiary" name="saveBeneficiary">
               <label for="saveBeneficiary">Enregistrer ce bénéficiaire</label>
             </div>
-            
             <div class="checkbox-group">
               <input type="checkbox" id="instantTransfer" name="instantTransfer">
               <label for="instantTransfer">Transfert instantané <span class="fee-badge">+13.4 MAD</span></label>
@@ -222,13 +223,74 @@
           </div>
           
           <div class="form-actions">
-            <button type="button" class="btn btn-secondary" id="cancelTransferBtn">
-              Annuler
-            </button>
+            <button type="button" class="btn btn-secondary" id="cancelTransferBtn">Annuler</button>
             <button type="submit" class="btn btn-primary" id="submitTransferBtn">
               <i class="fas fa-paper-plane"></i> Transférer
             </button>
           </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!--partie recharge-->
+  <div class="popup-overlay" id="rechargePopup">
+    <div class="popup-content">
+      <div class="popup-header">
+        <h2>
+          <i class="fas fa-plus-circle"></i> Recharger mon compte
+        </h2>
+        <button class="btn-close" id="closeRechargeBtn" type="button">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="popup-body">
+        <form id="rechargeForm" class="transfer-form">
+
+          <!-- Sélection de la carte -->
+          <div class="form-group">
+            <label for="rechargeCard">
+              <i class="fas fa-credit-card"></i> Carte de paiement
+            </label>
+            <select id="rechargeCard" name="rechargeCard" required>
+              <option value="" disabled selected>Sélectionner une carte</option>
+            </select>
+          </div>
+
+          <!-- Saisie du montant -->
+          <div class="form-group">
+            <label for="rechargeAmount">
+              <i class="fas fa-coins"></i> Montant (10 – 10 000 MAD)
+            </label>
+            <div class="amount-input">
+              <input
+                type="number"
+                id="rechargeAmount"
+                name="rechargeAmount"
+                min="10"
+                max="10000"
+                step="0.01"
+                placeholder="0.00"
+                required
+              >
+              <span class="currency">MAD</span>
+            </div>
+          </div>
+
+          <!-- Affichage de message -->
+          <div id="rechargeMessage"></div>
+
+          <!-- Boutons -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="cancelRechargeBtn">
+              Annuler
+            </button>
+            <button type="button" class="btn btn-primary" id="submitRechargeBtn">
+              <i class="fas fa-plus-circle"></i> Recharger
+            </button>
+          </div>
+
         </form>
       </div>
     </div>
@@ -239,5 +301,6 @@
   </footer>
 
   <script type="module" src="../controllers/dashboard.js"></script>
+  <script type="module" src="../controllers/recharge.js"></script>
 </body>
 </html>
