@@ -1,5 +1,7 @@
 const user = JSON.parse(sessionStorage.getItem("currentUser"));
 
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Constantes
 const MONTANT_MIN = 10;
 const MONTANT_MAX = 10000;
@@ -97,140 +99,118 @@ function renderDashboard() {
   }
 }
 
-// ─── Promises ───────────────────────────────────────────────────────────────
+// ─── async et await ───────────────────────────────────────────────────────────────
 
-// 1. Valider le montant
-function validateMontant(amount) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (!amount || isNaN(amount) || amount <= 0) {
-        reject("Le montant doit être strictement supérieur à zéro.");
-      } else if (amount < MONTANT_MIN) {
-        reject(`Le montant minimum de rechargement est ${MONTANT_MIN} MAD.`);
-      } else if (amount > MONTANT_MAX) {
-        reject(`Le montant maximum de rechargement est ${MONTANT_MAX} MAD.`);
-      } else {
-        resolve(amount);
-      }
-    }, 300);
-  });
+async function validateMontant(amount) {
+  await delay(300);
+
+  if (!amount || isNaN(amount) || amount <= 0)
+    throw "Le montant doit être strictement supérieur à zéro.";
+
+  if (amount < MONTANT_MIN)
+    throw `Le montant minimum de rechargement est ${MONTANT_MIN} MAD.`;
+
+  if (amount > MONTANT_MAX)
+    throw `Le montant maximum de rechargement est ${MONTANT_MAX} MAD.`;
+
+  return amount;
 }
 
-// 2. Valider que la carte appartient à l'utilisateur
-function validateCard(numCard) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const card = user.wallet.cards.find(
-        (c) => String(c.numcards) === String(numCard)
-      );
-      if (!card) {
-        reject("Moyen de paiement introuvable ou n'appartient pas à votre compte.");
-      } else {
-        resolve(card);
-      }
-    }, 500);
-  });
+async function validateCard(numCard) {
+  await delay(500);
+
+  const card = user.wallet.cards.find(
+    (c) => String(c.numcards) === String(numCard)
+  );
+
+  if (!card)
+    throw "Moyen de paiement introuvable.";
+
+  return card;
 }
 
-// 3. Vérifier la date d'expiration
-function checkCardExpiry(card) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const d1 = new Date(card.expiry);
-      const d2 = new Date();
-      if (d1 - d2 > 0) {
-        resolve(card);
-      } else {
-        reject("Cette carte est invalide à cause de sa date d'expiration.");
-      }
-    }, 1000);
-  });
+async function checkCardExpiry(card) {
+  await delay(1000);
+
+  const d1 = new Date(card.expiry);
+  const d2 = new Date();
+
+  if (d1 - d2 <= 0)
+    throw "Carte expirée.";
+
+  return card;
 }
 
-// 4. Mettre à jour le solde
-function updateSolde(amount) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      user.wallet.balance += amount;
-      sessionStorage.setItem("currentUser", JSON.stringify(user));
-      resolve("Solde mis à jour avec succès.");
-    }, 300);
-  });
+async function updateSolde(amount) {
+  await delay(300);
+
+  user.wallet.balance += amount;
+  sessionStorage.setItem("currentUser", JSON.stringify(user));
+
+  return "Solde mis à jour";
 }
 
-// 5. Enregistrer la transaction
-function addRechargeTransaction(card, amount) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const transaction = {
-        id: Date.now(),
-        type: "recharge",
-        amount: amount,
-        date: new Date().toLocaleDateString("fr-FR"),
-        from: `Carte ****${card.numcards}`,
-        status: "success",
-      };
-      user.wallet.transactions.push(transaction);
-      sessionStorage.setItem("currentUser", JSON.stringify(user));
-      resolve("Transaction enregistrée avec succès.");
-    }, 300);
-  });
+async function addRechargeTransaction(card, amount) {
+  await delay(300);
+
+  const transaction = {
+    id: Date.now(),
+    type: "recharge",
+    amount,
+    date: new Date().toLocaleDateString("fr-FR"),
+    from: `Carte ****${card.numcards}`,
+    status: "success",
+  };
+
+  user.wallet.transactions.push(transaction);
+  sessionStorage.setItem("currentUser", JSON.stringify(user));
+
+  return "Transaction enregistrée";
 }
 
 // ─── Fonction principale ─────────────────────────────────────────────────────
 
-function recharger(numCard, amount) {
-  console.log("\n DÉBUT DU RECHARGEMENT ");
+async function recharger(numCard, amount) {
+  console.log("DÉBUT DU RECHARGEMENT");
 
-  validateMontant(amount)
-    .then((validAmount) => {
-      console.log("Étape 1 — Montant valide :", validAmount, "MAD");
-      return validateCard(numCard);
-    })
+  try {
+    const validAmount = await validateMontant(amount);
+    console.log("Étape 1:", validAmount);
 
-    .then((card) => {
-      console.log("Étape 2 — Carte trouvée :", card.type, "****" + card.numcards);
-      return checkCardExpiry(card);
-    })
+    const card = await validateCard(numCard);
+    console.log("Étape 2:", card.type);
 
-    .then((card) => {
-      console.log("Étape 3 — Carte non expirée, expiry :", card.expiry);
-      return updateSolde(amount).then((msg) => {
-        console.log("Étape 4 —", msg);
-        return card;
-      });
-    })
+    await checkCardExpiry(card);
+    console.log("Étape 3: Carte valide");
 
-    .then((card) => {
-      return addRechargeTransaction(card, amount).then((msg) => {
-        console.log("Étape 5 —", msg);
-      });
-    })
+    const msg1 = await updateSolde(amount);
+    console.log("Étape 4:", msg1);
 
-    .then(() => {
-      console.log(`Rechargement de ${amount} MAD réussi !`);
-      showMessage(`Rechargement de ${amount} MAD effectué avec succès !`, "success");
-      renderDashboard();
-    })
+    const msg2 = await addRechargeTransaction(card, amount);
+    console.log("Étape 5:", msg2);
 
-    .catch((error) => {
-      console.error("Erreur :", error);
+    showMessage(`Rechargement de ${amount} MAD réussi`, "success");
+    renderDashboard();
 
-      const failedTransaction = {
-        id: Date.now(),
-        type: "recharge",
-        amount: amount,
-        date: new Date().toLocaleDateString("fr-FR"),
-        from: `Carte ****${numCard}`,
-        status: "failed",
-        error: error,
-      };
-      user.wallet.transactions.push(failedTransaction);
-      sessionStorage.setItem("currentUser", JSON.stringify(user));
-      showMessage(`Échec du rechargement : ${error}`, "error");
-    });
+  } catch (error) {
+    console.error(error);
+
+    const failedTransaction = {
+      id: Date.now(),
+      type: "recharge",
+      amount,
+      date: new Date().toLocaleDateString("fr-FR"),
+      from: `Carte ****${numCard}`,
+      status: "failed",
+      error,
+    };
+
+    user.wallet.transactions.push(failedTransaction);
+    sessionStorage.setItem("currentUser", JSON.stringify(user));
+
+    showMessage(`Échec : ${error}`, "error");
+  }
 }
-
 // ─── Handler bouton Soumettre ─────────────────────────────────────────────────
 
 function handleRecharge(e) {
